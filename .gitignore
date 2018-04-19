@@ -1,0 +1,7 @@
+/.nb-gradle/
+/.gradle/
+/build/
+.idea/
+VCSG.iml
+out
+

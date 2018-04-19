@@ -1,0 +1,25 @@
+// -----------------------------------------------------------------------------
+// publishing information
+// -----------------------------------------------------------------------------
+ext.publishing.artifactId =  project.name.toLowerCase()
+ext.publishing.groupId    =  'eu.mihosoft.vtcc'
+ext.publishing.versionId  =  '2018.1.4'
+
+ext.publishing.developerName         = 'Michael Hoffer'
+ext.publishing.developerAlias        = 'miho'
+ext.publishing.developerEmail        = 'info@michaelhoffer.de'
+ext.publishing.inceptionYear         = '2018'
+
+ext.publishing.bintray.repo          = 'TCC'
+ext.publishing.bintray.userOrg       = 'miho'
+ext.publishing.bintray.name          = project.name
+
+ext.publishing.desc                  = 'Run C code via clean Java API'
+ext.publishing.license               = 'BSD 2-Clause'
+ext.publishing.licenseUrl            = 'https://github.com/miho/VTCC/blob/master/LICENSE'
+ext.publishing.labels                = ['C', 'TCC', 'vmf', 'vrl','vrl-studio']
+ext.publishing.websiteUrl            = 'https://github.com/miho/VTCC'
+ext.publishing.issueTrackerUrl       = 'https://github.com/miho/VTCC/issues'
+ext.publishing.vcsUrl                = 'git@github.com:miho/VTCC.git'
+
+ext.publishing.pomName               =  ext.publishing.artifactId
