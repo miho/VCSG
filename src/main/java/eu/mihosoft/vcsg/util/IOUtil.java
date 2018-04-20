@@ -92,7 +92,7 @@ class IOUtil {
                 @Override
                 public void run() {
 
-                    if (DISABLE_SHUTDOWN_HOOK) {
+                    if (DISABLE_SHUTDOWN_HOOK || filesToDeleteOnExit.isEmpty()) {
                         return;
                     }
 

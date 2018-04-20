@@ -5,16 +5,19 @@ import eu.mihosoft.vvecmath.Vector3d;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 public final class CSG {
     private File file;
 
-    private CSG() {
+    CSG() {
         try {
             file = Files.createTempFile("_vcsg_", ".brep").toFile();
         } catch (IOException e) {
@@ -40,10 +43,10 @@ public final class CSG {
                 getFile().getAbsolutePath(),
                 union.getFile().getAbsolutePath(),
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
@@ -58,10 +61,10 @@ public final class CSG {
                 getFile().getAbsolutePath(),
                 other.getFile().getAbsolutePath(),
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
@@ -90,10 +93,10 @@ public final class CSG {
                 getFile().getAbsolutePath(),
                 other.getFile().getAbsolutePath(),
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
@@ -108,16 +111,16 @@ public final class CSG {
                 getFile().getAbsolutePath(),
                 other.getFile().getAbsolutePath(),
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
     }
 
-    private File getFile() {
+    File getFile() {
         return file;
     }
 
@@ -133,11 +136,11 @@ public final class CSG {
             int exitValue = VCSG.execute(
                     tmpDir,
                     "--edit", "split-shape",
-                    shapeF.getAbsolutePath()
-            ).print().getProcess().exitValue();
+                    shapeF.getAbsolutePath(), "brep"
+            ).print(null,System.err).getProcess().exitValue();
 
             if(exitValue!=0) {
-                throw new RuntimeException("Error during CSG command");
+                throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
             }
 
             return Files.list(tmpDir.toPath()).filter(f->!f.equals(shapeF.toPath())).map(f->new CSG(f.toFile())).
@@ -159,10 +162,10 @@ public final class CSG {
                 ""+radius,
                 getFile().getAbsolutePath(),
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
@@ -179,7 +182,7 @@ public final class CSG {
         System.out.println(ps);
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         String output = ps.toString();
@@ -223,10 +226,10 @@ public final class CSG {
         int exitValue = VCSG.execute(
                 "--create", "box", coords,
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
@@ -240,10 +243,10 @@ public final class CSG {
         int exitValue = VCSG.execute(
                 "--create", "sphere", coords,
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
@@ -257,10 +260,10 @@ public final class CSG {
         int exitValue = VCSG.execute(
                 "--create", "cyl", coords,
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
@@ -274,15 +277,38 @@ public final class CSG {
         int exitValue = VCSG.execute(
                 "--create", "cyl", coords,
                 result.getFile().getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return result;
     }
 
+    public CSG transformed(Transform transform) {
+
+        CSG result = new CSG();
+
+        double[] v = transform.to();
+
+        String values =
+                v[0]+","+v[1]+","+v[2]+","+v[3]+","+
+                v[4]+","+v[5]+","+v[6]+","+v[7]+","+
+                v[8]+","+v[9]+","+v[10]+","+v[11];
+
+        int exitValue = VCSG.execute(
+                "--transform", "matrix", values,
+                this.getFile().getAbsolutePath(),
+                result.getFile().getAbsolutePath()
+        ).print(null,System.err).getProcess().exitValue();
+
+        if(exitValue!=0) {
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+        }
+
+        return result;
+    }
 
     public CSG toSTEP(File f) {
 
@@ -294,10 +320,10 @@ public final class CSG {
                 "--convert",
                 getFile().getAbsolutePath(),
                 f.getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return this;
@@ -313,10 +339,10 @@ public final class CSG {
                 "--convert",
                 getFile().getAbsolutePath(),
                 f.getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return this;
@@ -333,10 +359,10 @@ public final class CSG {
                 getFile().getAbsolutePath(),
                 f.getAbsolutePath(),
                 ""+tol
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return this;
@@ -352,13 +378,83 @@ public final class CSG {
                 "--convert",
                 getFile().getAbsolutePath(),
                 f.getAbsolutePath()
-        ).print().getProcess().exitValue();
+        ).print(null,System.err).getProcess().exitValue();
 
         if(exitValue!=0) {
-            throw new RuntimeException("Error during CSG command");
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
         }
 
         return this;
+    }
+
+    public static CSG fromBREP(File f) {
+        if(!f.getAbsolutePath().toLowerCase().endsWith(".brep")) {
+            throw new RuntimeException("Cannot convert file. File must end with '.brep'");
+        }
+
+        try {
+            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
+            new CSG(f).toBREP(dest);
+            return new CSG(dest);
+        } catch (IOException e) {
+            throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
+        }
+    }
+
+    public static CSG fromSTEP(File f) {
+        if(!f.getAbsolutePath().toLowerCase().endsWith(".stp")) {
+            throw new RuntimeException("Cannot convert file. File must end with '.stp'");
+        }
+
+        try {
+            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
+            new CSG(f).toBREP(dest);
+            return new CSG(dest);
+        } catch (IOException e) {
+            throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
+        }
+    }
+
+    public static CSG fromSTL(File f) {
+        if(!f.getAbsolutePath().toLowerCase().endsWith(".stl")) {
+            throw new RuntimeException("Cannot convert file. File must end with '.stl'");
+        }
+
+        try {
+            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
+            new CSG(f).toBREP(dest);
+            return new CSG(dest);
+        } catch (IOException e) {
+            throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
+        }
+    }
+
+
+    public static CSG extrude(Vector3d dir, Vector3d... vertices) {
+        return extrude(dir,Arrays.asList(vertices));
+    }
+
+    public static CSG extrude(Vector3d dir, List<Vector3d> vertices) {
+
+        CSG result = new CSG();
+
+        String coords = "";
+
+        for (Vector3d v : vertices) {
+            coords += ","+v.x()+","+v.y()+","+v.z();
+        }
+
+        int exitValue = VCSG.execute(
+                "--create", "extrusion:polygon",
+                dir.x()+","+dir.y()+","+dir.z()+coords,
+                result.getFile().getAbsolutePath()
+        ).print(null,System.err).getProcess().exitValue();
+
+        if(exitValue!=0) {
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+        }
+
+        return result;
     }
 
 //    public CSG transformed(Transform t) {
@@ -366,10 +462,10 @@ public final class CSG {
 //                "--convert",
 //                getFile().getAbsolutePath(),
 //                f.getAbsolutePath()
-//        ).print().getProcess().exitValue();
+//        ).print(null,System.err).getProcess().exitValue();
 //
 //        if(exitValue!=0) {
-//            throw new RuntimeException("Error during CSG command");
+//            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
 //        }
 //
 //        return this;

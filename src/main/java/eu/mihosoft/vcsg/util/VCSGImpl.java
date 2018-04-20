@@ -125,10 +125,14 @@ public class VCSGImpl implements VCSG {
 
     @Override
     public VCSGImpl print(PrintStream out, PrintStream err) {
-        errorGobbler = new StreamGobbler(err, vcsgProcess.getErrorStream(), "");
-        errorGobbler.start();
-        stdGobbler = new StreamGobbler(out, vcsgProcess.getInputStream(), "");
-        stdGobbler.start();
+        if(err!=null) {
+            errorGobbler = new StreamGobbler(err, vcsgProcess.getErrorStream(), "");
+            errorGobbler.start();
+        }
+        if(out!=null) {
+            stdGobbler = new StreamGobbler(out, vcsgProcess.getInputStream(), "");
+            stdGobbler.start();
+        }
 
         return waitFor();
     }
@@ -150,6 +154,8 @@ public class VCSGImpl implements VCSG {
             vcsgProcess.waitFor();
             if(errorGobbler!=null) {
                 errorGobbler.join();
+            }
+            if(stdGobbler!=null) {
                 stdGobbler.join();
             }
         } catch (InterruptedException ex) {

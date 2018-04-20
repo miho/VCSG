@@ -25,13 +25,17 @@ repositories {
     mavenCentral()
     jcenter()
     mavenLocal()
+
+    maven {
+        url 'https://dl.bintray.com/miho/JCSG/'
+    }
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.10'
-    testCompile group: 'eu.mihosoft.vcsg.vcsgdist', name: 'vcsg-dist', version: '0.8'
+    testCompile group: 'eu.mihosoft.vcsg.vcsgdist', name: 'vcsg-dist', version: '0.9'
 
-    compile group: 'eu.mihosoft.vvecmath', name: 'vvecmath', version: '0.3.8'
+    compile group: 'eu.mihosoft.vvecmath', name: 'vvecmath', version: '0.3.9'
 }
 
 //task run(type: JavaExec) {
