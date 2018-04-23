@@ -259,7 +259,6 @@ public final class CSG {
 
         int exitValue = VCSG.execute(
                 "--create", "cyl", coords,
-                ""+radius,
                 result.getFile().getAbsolutePath()
         ).print(null,System.err).getProcess().exitValue();
 
@@ -277,7 +276,6 @@ public final class CSG {
 
         int exitValue = VCSG.execute(
                 "--create", "cone", coords,
-                ""+r1, ""+r2,
                 result.getFile().getAbsolutePath()
         ).print(null,System.err).getProcess().exitValue();
 
