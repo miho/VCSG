@@ -8,9 +8,14 @@ public class Bounds {
     private Vector3d min;
     private Vector3d max;
 
+    private Vector3d dimensions;
+
+
     Bounds(Vector3d min, Vector3d max) {
         this.min = min;
         this.max = max;
+
+        dimensions = max.subtracted(min);
     }
 
     public Vector3d getMax() {
@@ -20,6 +25,23 @@ public class Bounds {
     public Vector3d getMin() {
         return min;
     }
+
+    public Vector3d getDimensions() {
+        return this.dimensions;
+    }
+
+    public double getWidth() {
+        return getDimensions().x();
+    }
+
+    public double getHeight() {
+        return getDimensions().y();
+    }
+
+    public double getDepth() {
+        return getDimensions().z();
+    }
+
 
     public CSG toCSG() {
         return CSG.box(min,max);

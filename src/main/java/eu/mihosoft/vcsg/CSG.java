@@ -252,7 +252,7 @@ public final class CSG {
         return result;
     }
 
-    public static CSG cylinder(Vector3d origin, double radius, double height) {
+    public static CSG cyl(Vector3d origin, double radius, double height) {
         CSG result = new CSG();
 
         String coords = origin.x()+","+origin.y()+","+origin.z()+","+radius+","+height;
