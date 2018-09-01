@@ -270,6 +270,11 @@ public final class CSG {
     }
 
     public static CSG cone(Vector3d origin, double r1, double r2, double height) {
+        
+        if(Double.compare(r1,r2) == 0) {
+            return cyl(origin, r1, height);
+        }
+        
         CSG result = new CSG();
 
         String coords = origin.x()+","+origin.y()+","+origin.z()+","+r1+","+r2+","+height;
