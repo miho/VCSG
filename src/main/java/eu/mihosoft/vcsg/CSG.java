@@ -16,33 +16,22 @@ import java.util.stream.Collectors;
 
 public final class CSG {
     private File file;
-    private String fileType = "brep";
 
     CSG() {
         try {
-            file = Files.createTempFile("_vcsg_", "."+fileType).toFile();
+            file = Files.createTempFile("_vcsg_", ".brep").toFile();
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
         }
     }
 
-    private CSG(File f, String fileType) {
+    private CSG(File f) {
         this.file = f;
-        this.fileType = fileType;
     }
 
     public CSG clone() {
         return new CSG(getFile());
     }
-    
-    public CSG setFileType(String fileType) {
-        this.fileType = fileType;
-        return this;
-    }
-    
-    public String getFileType() {
-        return fileType;
-    } 
 
     public CSG difference(CSG... others) {
 
@@ -140,14 +129,14 @@ public final class CSG {
         try {
             File tmpDir = Files.createTempDirectory("_vcsg").toFile();
 
-            File shapeF = new File(tmpDir, "shape."+fileType);
+            File shapeF = new File(tmpDir, "shape.brep");
 
             Files.copy(getFile().toPath(), shapeF.toPath());
 
             int exitValue = VCSG.execute(
                     tmpDir,
                     "--edit", "split-shape",
-                    shapeF.getAbsolutePath(), fileType
+                    shapeF.getAbsolutePath(), "brep"
             ).print(null,System.err).getProcess().exitValue();
 
             if(exitValue!=0) {
@@ -281,11 +270,12 @@ public final class CSG {
     }
 
     public static CSG cone(Vector3d origin, double r1, double r2, double height) {
-        
+
         if(Double.compare(r1,r2) == 0) {
+            System.err.println("WARNING: radii of cone are identical. Converting it to a cylinder tp prevent OCC to crash.");
             return cyl(origin, r1, height);
         }
-        
+
         CSG result = new CSG();
 
         String coords = origin.x()+","+origin.y()+","+origin.z()+","+r1+","+r2+","+height;
@@ -310,8 +300,8 @@ public final class CSG {
 
         String values =
                 v[0]+","+v[1]+","+v[2]+","+v[3]+","+
-                v[4]+","+v[5]+","+v[6]+","+v[7]+","+
-                v[8]+","+v[9]+","+v[10]+","+v[11];
+                        v[4]+","+v[5]+","+v[6]+","+v[7]+","+
+                        v[8]+","+v[9]+","+v[10]+","+v[11];
 
         int exitValue = VCSG.execute(
                 "--transform", "matrix", values,
@@ -409,8 +399,8 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", "."+fileType).toFile();
-            new CSG(f,fileType).toBREP(dest);
+            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
+            new CSG(f).toBREP(dest);
             return new CSG(dest);
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
@@ -423,8 +413,8 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", "."+fileType).toFile();
-            new CSG(f,fileType).toBREP(dest);
+            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
+            new CSG(f).toBREP(dest);
             return new CSG(dest);
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
@@ -437,7 +427,7 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", "."+fileType).toFile();
+            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
             new CSG(f).toBREP(dest);
             return new CSG(dest);
         } catch (IOException e) {
