@@ -16,22 +16,33 @@ import java.util.stream.Collectors;
 
 public final class CSG {
     private File file;
+    private String fileType = "brep";
 
     CSG() {
         try {
-            file = Files.createTempFile("_vcsg_", ".brep").toFile();
+            file = Files.createTempFile("_vcsg_", "."+fileType).toFile();
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
         }
     }
 
-    private CSG(File f) {
+    private CSG(File f, String fileType) {
         this.file = f;
+        this.fileType = fileType;
     }
 
     public CSG clone() {
         return new CSG(getFile());
     }
+    
+    public CSG setFileType(String fileType) {
+        this.fileType = fileType;
+        return this;
+    }
+    
+    public String getFileType() {
+        return fileType;
+    } 
 
     public CSG difference(CSG... others) {
 
@@ -129,14 +140,14 @@ public final class CSG {
         try {
             File tmpDir = Files.createTempDirectory("_vcsg").toFile();
 
-            File shapeF = new File(tmpDir, "shape.brep");
+            File shapeF = new File(tmpDir, "shape."+fileType);
 
             Files.copy(getFile().toPath(), shapeF.toPath());
 
             int exitValue = VCSG.execute(
                     tmpDir,
                     "--edit", "split-shape",
-                    shapeF.getAbsolutePath(), "brep"
+                    shapeF.getAbsolutePath(), fileType
             ).print(null,System.err).getProcess().exitValue();
 
             if(exitValue!=0) {
@@ -398,8 +409,8 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
-            new CSG(f).toBREP(dest);
+            File dest = Files.createTempFile("_vcsg_", "."+fileType).toFile();
+            new CSG(f,fileType).toBREP(dest);
             return new CSG(dest);
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
@@ -412,8 +423,8 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
-            new CSG(f).toBREP(dest);
+            File dest = Files.createTempFile("_vcsg_", "."+fileType).toFile();
+            new CSG(f,fileType).toBREP(dest);
             return new CSG(dest);
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
@@ -426,7 +437,7 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".brep").toFile();
+            File dest = Files.createTempFile("_vcsg_", "."+fileType).toFile();
             new CSG(f).toBREP(dest);
             return new CSG(dest);
         } catch (IOException e) {
