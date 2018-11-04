@@ -2,4 +2,4 @@
 
 [ ![Download](https://api.bintray.com/packages/miho/JCSG/VCSG/images/download.svg) ](https://bintray.com/miho/JCSG/VCSG/_latestVersion)
 
-CSG library (uses [native CAD libraries](https://github.com/miho/OCC-CSG) as well as JCSG &amp; VVecMath)
+CSG library (uses [native CAD libraries](https://github.com/miho/OCC-CSG) as well as [JCSG](https://github.com/miho/JCSG) &amp; [VVecMath](https://github.com/miho/VVecMath))
