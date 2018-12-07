@@ -3,5 +3,9 @@
 /build/
 .idea/
 VCSG.iml
-out
+/out/
+/bin/
+/.settings/
+/.classpath
+/.project
 
