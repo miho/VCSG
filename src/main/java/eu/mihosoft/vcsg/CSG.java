@@ -17,6 +17,16 @@ public final class CSG {
     private String fileType = ".stp";
     private double fuzzyValue = 0;
 
+    public CSG useBREP() {
+        this.fileType = ".brep";
+        return this;
+    }
+
+    public CSG useSTEP() {
+        this.fileType = ".stp";
+        return this;
+    }
+
     CSG() {
         try {
             file = Files.createTempFile("_vcsg_", "." + getFileType()).toFile();
@@ -462,7 +472,7 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".step").toFile();
+            File dest = Files.createTempFile("_vcsg_", ".stp").toFile();
             new CSG(f, "step").toSTEP(dest);
             return new CSG(dest, "step");
         } catch (IOException e) {
@@ -476,7 +486,7 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".step").toFile();
+            File dest = Files.createTempFile("_vcsg_", ".stp").toFile();
             new CSG(f, "step").toSTEP(dest);
             return new CSG(dest, "step");
         } catch (IOException e) {
@@ -490,7 +500,7 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".step").toFile();
+            File dest = Files.createTempFile("_vcsg_", ".stp").toFile();
             new CSG(f, "step").toSTEP(dest);
             return new CSG(dest, "step");
         } catch (IOException e) {
