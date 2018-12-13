@@ -23,7 +23,8 @@ import javax.sound.sampled.SourceDataLine;
 public final class CSG {
     private File file;
 
-    private String fileType = ".stp";
+    private static String defaultFileType = ".stp";
+    private String fileType = defaultFileType;
     private double fuzzyValue = 0;
 
     public CSG useBREP() {
@@ -36,8 +37,17 @@ public final class CSG {
         return this;
     }
 
-    CSG() {
+    public static void useBREPAsDefault() {
+        defaultFileType = ".brep";
+    }
+
+    public static void useSTEPAsDefault() {
+        defaultFileType = ".stp";
+    }
+
+    CSG(String fileType) {
         try {
+            this.setFileType(fileType);
             file = Files.createTempFile("_vcsg_", "." + getFileType()).toFile();
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
@@ -73,8 +83,8 @@ public final class CSG {
 
     public CSG difference(CSG... others) {
 
-        CSG result = new CSG();
-        CSG union = new CSG().union(others);
+        CSG result = new CSG(fileType);
+        CSG union = new CSG(fileType).union(others);
 
         String[] exeArgs;
 
@@ -95,7 +105,7 @@ public final class CSG {
         int exitValue = VCSG.execute(exeArgs).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
@@ -103,7 +113,7 @@ public final class CSG {
 
     public CSG difference(CSG other) {
 
-        CSG result = new CSG();
+        CSG result = new CSG(fileType);
 
         String[] exeArgs;
 
@@ -124,7 +134,7 @@ public final class CSG {
         int exitValue = VCSG.execute(exeArgs).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
@@ -146,7 +156,7 @@ public final class CSG {
 
     public CSG union(CSG other) {
 
-        CSG result = new CSG();
+        CSG result = new CSG(fileType);
 
         String[] exeArgs;
 
@@ -167,7 +177,7 @@ public final class CSG {
         int exitValue = VCSG.execute(exeArgs).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
@@ -175,7 +185,7 @@ public final class CSG {
 
     public CSG intersect(CSG other) {
 
-        CSG result = new CSG();
+        CSG result = new CSG(fileType);
 
         String[] exeArgs;
 
@@ -196,7 +206,7 @@ public final class CSG {
         int exitValue = VCSG.execute(exeArgs).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
@@ -215,14 +225,15 @@ public final class CSG {
 
             Files.copy(getFile().toPath(), shapeF.toPath());
 
+            String[] exeArgs = {"--edit", "split-shape",
+                    shapeF.getAbsolutePath(), "brep"};
+
             int exitValue = VCSG.execute(
-                    tmpDir,
-                    "--edit", "split-shape",
-                    shapeF.getAbsolutePath(), "brep"
+                    tmpDir, exeArgs
             ).print(null, System.err).getProcess().exitValue();
 
             if (exitValue != 0) {
-                throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+                throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
             }
 
             return Files.list(tmpDir.toPath()).filter(f -> !f.equals(shapeF.toPath())).map(f -> new CSG(f.toFile(), getFileType())).
@@ -237,34 +248,60 @@ public final class CSG {
     }
 
     public CSG round(double radius) {
-        CSG result = new CSG();
+        CSG result = new CSG(fileType);
 
-        int exitValue = VCSG.execute(
-                "--edit", "round-edges",
+        String[] exeArgs = {"--edit", "round-edges",
                 "" + radius,
                 getFile().getAbsolutePath(),
-                result.getFile().getAbsolutePath()
+                result.getFile().getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
     }
 
+    public String getVersion() {
+        StringPrintStream ps = new StringPrintStream();
+
+        String[] exeArgs = {
+                "--version",
+                getFile().getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
+        ).print(ps, System.err).getProcess().exitValue();
+
+        if (exitValue != 0) {
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
+        }
+
+        String output = ps.toString();
+
+        output = output.substring("Version ".length());
+
+        return output;
+    }
+
     public Bounds getBounds() {
         StringPrintStream ps = new StringPrintStream();
 
+        String[] exeArgs = {"--bounds",
+                getFile().getAbsolutePath()};
+
         int exitValue = VCSG.execute(
-                "--bounds",
-                getFile().getAbsolutePath()
+                exeArgs
         ).print(ps, System.err).getProcess().exitValue();
 
         System.out.println(ps);
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         String output = ps.toString();
@@ -301,17 +338,19 @@ public final class CSG {
     }
 
     public static CSG box(Vector3d min, Vector3d max) {
-        CSG result = new CSG();
+        CSG result = new CSG(defaultFileType);
 
         String coords = min.x() + "," + min.y() + "," + min.z() + "," + max.x() + "," + max.y() + "," + max.z();
 
+        String[] exeArgs = {"--create", "box", coords,
+                result.getFile().getAbsolutePath()};
+
         int exitValue = VCSG.execute(
-                "--create", "box", coords,
-                result.getFile().getAbsolutePath()
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
@@ -343,17 +382,19 @@ public final class CSG {
     }
 
     public static CSG sphere(Vector3d origin, double radius) {
-        CSG result = new CSG();
+        CSG result = new CSG(defaultFileType);
 
         String coords = origin.x() + "," + origin.y() + "," + origin.z() + "," + radius;
 
+        String[] exeArgs = {"--create", "sphere", coords,
+                result.getFile().getAbsolutePath()};
+
         int exitValue = VCSG.execute(
-                "--create", "sphere", coords,
-                result.getFile().getAbsolutePath()
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
@@ -364,13 +405,15 @@ public final class CSG {
     }
 
     public static CSG cyl(Vector3d origin, double radius, double height) {
-        CSG result = new CSG();
+        CSG result = new CSG(defaultFileType);
 
         String coords = origin.x() + "," + origin.y() + "," + origin.z() + "," + radius + "," + height;
 
+        String[] exeArgs = {"--create", "cyl", coords,
+                result.getFile().getAbsolutePath()};
+
         int exitValue = VCSG.execute(
-                "--create", "cyl", coords,
-                result.getFile().getAbsolutePath()
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
@@ -387,17 +430,20 @@ public final class CSG {
             return cyl(origin, r1, height);
         }
 
-        CSG result = new CSG();
+        CSG result = new CSG(defaultFileType);
 
         String coords = origin.x() + "," + origin.y() + "," + origin.z() + "," + r1 + "," + r2 + "," + height;
 
-        int exitValue = VCSG.execute(
+        String[] exeArgs = {
                 "--create", "cone", coords,
-                result.getFile().getAbsolutePath()
+                result.getFile().getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
@@ -405,7 +451,7 @@ public final class CSG {
 
     public CSG transformed(Transform transform) {
 
-        CSG result = new CSG();
+        CSG result = new CSG(fileType);
 
         double[] v = transform.to();
 
@@ -414,14 +460,17 @@ public final class CSG {
                         v[4] + "," + v[5] + "," + v[6] + "," + v[7] + "," +
                         v[8] + "," + v[9] + "," + v[10] + "," + v[11];
 
-        int exitValue = VCSG.execute(
+        String[] exeArgs = {
                 "--transform", "matrix", values,
                 this.getFile().getAbsolutePath(),
-                result.getFile().getAbsolutePath()
+                result.getFile().getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
@@ -433,14 +482,17 @@ public final class CSG {
             throw new RuntimeException("Cannot convert file. File must end with '.stp'");
         }
 
-        int exitValue = VCSG.execute(
+        String[] exeArgs = {
                 "--convert",
                 getFile().getAbsolutePath(),
-                f.getAbsolutePath()
+                f.getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return this;
@@ -452,14 +504,17 @@ public final class CSG {
             throw new RuntimeException("Cannot convert file. File must end with '.brep'");
         }
 
-        int exitValue = VCSG.execute(
+        String[] exeArgs = {
                 "--convert",
                 getFile().getAbsolutePath(),
-                f.getAbsolutePath()
+                f.getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return this;
@@ -471,15 +526,17 @@ public final class CSG {
             throw new RuntimeException("Cannot convert file. File must end with '.stl'");
         }
 
-        int exitValue = VCSG.execute(
-                "--convert",
+        String[] exeArgs = {"--convert",
                 getFile().getAbsolutePath(),
                 f.getAbsolutePath(),
-                "" + tol
+                "" + tol};
+
+        int exitValue = VCSG.execute(
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return this;
@@ -491,14 +548,17 @@ public final class CSG {
             throw new RuntimeException("Cannot convert file. File must end with '.stl'");
         }
 
-        int exitValue = VCSG.execute(
+        String[] exeArgs = {
                 "--convert",
                 getFile().getAbsolutePath(),
-                f.getAbsolutePath()
+                f.getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return this;
@@ -510,8 +570,8 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".stp").toFile();
-            new CSG(f, "step").toSTEP(dest);
+            File dest = Files.createTempFile("_vcsg_", defaultFileType).toFile();
+            new CSG(f, defaultFileType).toSTEP(dest);
             return new CSG(dest, "step");
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
@@ -524,9 +584,9 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".stp").toFile();
-            new CSG(f, "step").toSTEP(dest);
-            return new CSG(dest, "step");
+            File dest = Files.createTempFile("_vcsg_", defaultFileType).toFile();
+            new CSG(f, defaultFileType).toSTEP(dest);
+            return new CSG(dest, defaultFileType);
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
         }
@@ -538,9 +598,9 @@ public final class CSG {
         }
 
         try {
-            File dest = Files.createTempFile("_vcsg_", ".stp").toFile();
-            new CSG(f, "step").toSTEP(dest);
-            return new CSG(dest, "step");
+            File dest = Files.createTempFile("_vcsg_", defaultFileType).toFile();
+            new CSG(f, defaultFileType).toSTEP(dest);
+            return new CSG(dest, defaultFileType);
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
         }
@@ -553,7 +613,7 @@ public final class CSG {
 
     public static CSG extrude(Vector3d dir, List<Vector3d> vertices) {
 
-        CSG result = new CSG();
+        CSG result = new CSG(defaultFileType);
 
         String coords = "";
 
@@ -561,14 +621,17 @@ public final class CSG {
             coords += "," + v.x() + "," + v.y() + "," + v.z();
         }
 
-        int exitValue = VCSG.execute(
+        String[] exeArgs = {
                 "--create", "extrusion:polygon",
                 dir.x() + "," + dir.y() + "," + dir.z() + coords,
-                result.getFile().getAbsolutePath()
+                result.getFile().getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
         ).print(null, System.err).getProcess().exitValue();
 
         if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
         }
 
         return result;
