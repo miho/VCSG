@@ -1,6 +1,5 @@
 package eu.mihosoft.vcsg;
 
-import eu.mihosoft.vvecmath.StoredVector3d;
 import eu.mihosoft.vvecmath.Transform;
 import eu.mihosoft.vvecmath.Vector3d;
 
@@ -10,16 +9,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import javax.sound.sampled.SourceDataLine;
 
+/**
+ * A simple but effective CSG API based on the occ-csg command line tool.
+ */
 public final class CSG {
     private File file;
 
@@ -27,20 +26,38 @@ public final class CSG {
     private String fileType = defaultFileType;
     private double fuzzyValue = 0;
 
+    /**
+     * Sets the BREP file format as internal representation of this CSG object.
+     *
+     * @return this CSG object
+     */
     public CSG useBREP() {
         this.fileType = ".brep";
         return this;
     }
 
+    /**
+     * Sets the STEP file format as internal representation of this CSG object.
+     *
+     * @return this CSG object
+     */
     public CSG useSTEP() {
         this.fileType = ".stp";
         return this;
     }
 
+    /**
+     * Sets the BREP file format as default for internal representation of all CSG object.
+     *
+     * @return this CSG object
+     */
     public static void useBREPAsDefault() {
         defaultFileType = ".brep";
     }
 
+    /**
+     * Sets the STEP file format as default for internal representation of all CSG object.
+     */
     public static void useSTEPAsDefault() {
         defaultFileType = ".stp";
     }
@@ -59,28 +76,56 @@ public final class CSG {
         this.setFileType(fileType);
     }
 
+    /**
+     * Returns the file type of this CSG object.
+     * @return file type of this CSG object as String
+     */
     public String getFileType() {
         return fileType;
     }
 
+    /**
+     * Sets the file type of this CSG object.
+     * @param fileType file type to set
+     * @return this CSG object
+     */
     public CSG setFileType(String fileType) {
         this.fileType = fileType;
         return this;
     }
 
+    /**
+     * Sets the fuzzy value used for boolean operations (see OCC documentation).
+     * @param fuzzyValue the fuzzy value to set
+     * @return this CSG object
+     */
     public CSG setFuzzyValue(double fuzzyValue) {
         this.fuzzyValue = fuzzyValue;
         return this;
     }
 
+    /**
+     * Returns the fuzzy value used for boolean operations.
+     * @see #setFuzzyValue(double)
+     * @return the fuzzy value used for boolean operations
+     */
     public double getFuzzyValue() {
         return fuzzyValue;
     }
 
+    /**
+     * Returns a deep clone of this CSG object.
+     * @return a deep clone of this CSG object
+     */
     public CSG clone() {
         return new CSG(getFile(), getFileType());
     }
 
+    /**
+     * Computes the difference between this CSG object and the specified CSG objects.
+     * @param others CSG objects to be removed from this CSG.
+     * @return difference between this CSG object and the specified CSG objects
+     */
     public CSG difference(CSG... others) {
 
         CSG result = new CSG(fileType);
@@ -111,6 +156,11 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Computes the difference between this CSG object and the specified CSG object.
+     * @param other CSG object to be removed from this CSG.
+     * @return difference between this CSG object and the specified CSG object
+     */
     public CSG difference(CSG other) {
 
         CSG result = new CSG(fileType);
@@ -140,10 +190,20 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Returns the union of this CSG object and the specified CSG objects.
+     * @param others CSG objects to unify with this CSG object
+     * @return the union of this CSG object and the specified CSG objects
+     */
     public CSG union(CSG... others) {
         return union(Arrays.asList(others));
     }
 
+    /**
+     * Returns the union of this CSG object and the specified CSG objects.
+     * @param others CSG objects to unify with this CSG object
+     * @return the union of this CSG object and the specified CSG objects
+     */
     public CSG union(List<CSG> others) {
 
         CSG result = this.clone();
@@ -154,6 +214,11 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Returns the union of this CSG object and the specified CSG object.
+     * @param other CSG object to unify with this CSG object
+     * @return the union of this CSG object and the specified CSG object
+     */
     public CSG union(CSG other) {
 
         CSG result = new CSG(fileType);
@@ -183,6 +248,11 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Returns the intersection of this CSG object and the specified CSG object.
+     * @param other CSG objects to intersect with this CSG object
+     * @return the intersect of this CSG object and the specified CSG objects
+     */
     public CSG intersect(CSG other) {
 
         CSG result = new CSG(fileType);
@@ -216,6 +286,10 @@ public final class CSG {
         return file;
     }
 
+    /**
+     * Splits this CSG object into faces (each represented by a CSG object).
+     * @return faces of this CSG object (each represented by a CSG object)
+     */
     public List<CSG> split() {
 
         try {
@@ -247,6 +321,11 @@ public final class CSG {
         return Collections.emptyList();
     }
 
+    /**
+     * Returns a CSG with rounded edges (rounding with specified radius).
+     * @param radius radius for edge rounding
+     * @return a CSG with rounded edges
+     */
     public CSG round(double radius) {
         CSG result = new CSG(fileType);
 
@@ -266,6 +345,10 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Returns the version string of the occ-csg binary used by this CSG object.
+     * @return version string
+     */
     public String getVersion() {
         StringPrintStream ps = new StringPrintStream();
 
@@ -288,6 +371,10 @@ public final class CSG {
         return output;
     }
 
+    /**
+     * Returns the axis aligned bounding box of this CSg object.
+     * @return axis aligned bounding box
+     */
     public Bounds getBounds() {
         StringPrintStream ps = new StringPrintStream();
 
@@ -337,6 +424,12 @@ public final class CSG {
         throw new RuntimeException("Cannot compute bounds");
     }
 
+    /**
+     * Returns a box CSG with the specified min and max coordinates.
+     * @param min minimum
+     * @param max maximum
+     * @return box CSG
+     */
     public static CSG box(Vector3d min, Vector3d max) {
         CSG result = new CSG(defaultFileType);
 
@@ -356,6 +449,11 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Returns a box CSG with the specified size (x,y,z) at origin (0,0,0).
+     * @param size size
+     * @return box CSG
+     */
     public static CSG box(double size) {
         Vector3d min = Vector3d.xyz(-size/2.0,-size/2.0,-size/2.0);
         Vector3d max = Vector3d.xyz(size/2.0,size/2.0,size/2.0);
@@ -363,6 +461,13 @@ public final class CSG {
         return CSG.box(min, max);
     }
 
+    /**
+     * Returns a box CSG with the specified width, height and depth at origin (0,0,0).
+     * @param w width (x-axis)
+     * @param h height (y-axis)
+     * @param d depth (z-axis)
+     * @return box CSG
+     */
     public static CSG box(double w, double h, double d) {
         Vector3d min = Vector3d.xyz(-w/2.0,-h/2.0,-d/2.0);
         Vector3d max = Vector3d.xyz(w/2.0,h/2.0,d/2.0);
@@ -370,17 +475,36 @@ public final class CSG {
         return CSG.box(min, max);
     }
 
-    public static CSG box(Vector3d center, double w, double h, double d) {
+    /**
+     * Returns a box CSG at the specified origin with the specified width, height and depth.
+     * @param origin center location of the box
+     * @param w width (x-axis)
+     * @param h height (y-axis)
+     * @param d depth (z-axis)
+     * @return box CSG
+     */
+    public static CSG box(Vector3d origin, double w, double h, double d) {
         Vector3d min = Vector3d.xyz(-w/2.0,-h/2.0,-d/2.0);
         Vector3d max = Vector3d.xyz(w/2.0,h/2.0,d/2.0);
 
-        return CSG.box(min, max).transformed(Transform.unity().translate(center));
+        return CSG.box(min, max).transformed(Transform.unity().translate(origin));
     }
 
+    /**
+     * Returns a sphere CSG with the specified radius at origin (0,0,0).
+     * @param radius radius of the sphere
+     * @return sphere CSG
+     */
     public static CSG sphere(double radius) {
         return sphere(Vector3d.ZERO, radius);
     }
 
+    /**
+     * Returns a sphere CSG at the specified origin with the specified radius.
+     * @param origin center location of the sphere
+     * @param radius radius of the sphere
+     * @return sphere CSG
+     */
     public static CSG sphere(Vector3d origin, double radius) {
         CSG result = new CSG(defaultFileType);
 
@@ -400,10 +524,23 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Returns a cylinder CSG with the specified radius and height.
+     * @param radius radius of the cylinder
+     * @param height height of the cylinder
+     * @return cylinder CSG
+     */
     public static CSG cyl(double radius, double height) {
         return cyl(Vector3d.ZERO, radius, height);
     }
 
+    /**
+     * Returns a cylinder CSG with the specified origin, radius and height.
+     * @param origin origin of the cylinder
+     * @param radius radius of the cylinder
+     * @param height height of the cylinder
+     * @return cylinder CSG
+     */
     public static CSG cyl(Vector3d origin, double radius, double height) {
         CSG result = new CSG(defaultFileType);
 
@@ -423,6 +560,14 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Returns a (truncated) cone CSG with the specified origin, upper radius, lower radius and height
+     * @param origin origin of this cylinder
+     * @param r1 upper radius
+     * @param r2 lower radius
+     * @param height height of the cone
+     * @return cone CSG
+     */
     public static CSG cone(Vector3d origin, double r1, double r2, double height) {
 
         if (Double.compare(r1, r2) == 0) {
@@ -449,6 +594,11 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Returns a transformed copy of this CSG.
+     * @param transform transform to apply
+     * @return a transformed copy of this CSG
+     */
     public CSG transformed(Transform transform) {
 
         CSG result = new CSG(fileType);
@@ -476,6 +626,11 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Saves this CSG as STEP file.
+     * @param f destination file (must end with {@code .stp})
+     * @return this CSG
+     */
     public CSG toSTEP(File f) {
 
         if (!f.getAbsolutePath().toLowerCase().endsWith(".stp")) {
@@ -498,6 +653,11 @@ public final class CSG {
         return this;
     }
 
+    /**
+     * Saves this CSG as BREP file.
+     * @param f destination file (must end with {@code .brep})
+     * @return this CSG
+     */
     public CSG toBREP(File f) {
 
         if (!f.getAbsolutePath().toLowerCase().endsWith(".brep")) {
@@ -520,6 +680,12 @@ public final class CSG {
         return this;
     }
 
+    /**
+     * Saves this CSG as STL file.
+     * @param f destination file (must end with {@code .stl})
+     * @param tol tolerance for triangulation ({@code tol > 0}, lower values result in more accurate triangulation)
+     * @return this CSG
+     */
     public CSG toSTL(File f, double tol) {
 
         if (!f.getAbsolutePath().toLowerCase().endsWith(".stl")) {
@@ -542,6 +708,11 @@ public final class CSG {
         return this;
     }
 
+    /**
+     * Saves this CSG as STL file.
+     * @param f destination file (must end with {@code .stl})
+     * @return this CSG
+     */
     public CSG toSTL(File f) {
 
         if (!f.getAbsolutePath().toLowerCase().endsWith(".stl")) {
@@ -564,6 +735,11 @@ public final class CSG {
         return this;
     }
 
+    /**
+     * Creates a CSG object from the specified BREP file.
+     * @param f source file (must end with {@code .brep})
+     * @return CSG object
+     */
     public static CSG fromBREP(File f) {
         if (!f.getAbsolutePath().toLowerCase().endsWith(".brep")) {
             throw new RuntimeException("Cannot convert file. File must end with '.brep'");
@@ -578,6 +754,11 @@ public final class CSG {
         }
     }
 
+    /**
+     * Creates a CSG object from the specified STEP file.
+     * @param f source file (must end with {@code .stp})
+     * @return CSG object
+     */
     public static CSG fromSTEP(File f) {
         if (!f.getAbsolutePath().toLowerCase().endsWith(".stp")) {
             throw new RuntimeException("Cannot convert file. File must end with '.stp'");
@@ -592,6 +773,14 @@ public final class CSG {
         }
     }
 
+    /**
+     * Creates a CSG object from the specified STL file.
+     * Be aware that STL to BREP conversion can cause performance issues. Prefer STEP or BREP import.
+     * @param f source file (must end with {@code .stl})
+     * @return CSG object
+     * @see #fromBREP(File)
+     * @see #fromSTEP(File)
+     */
     public static CSG fromSTL(File f) {
         if (!f.getAbsolutePath().toLowerCase().endsWith(".stl")) {
             throw new RuntimeException("Cannot convert file. File must end with '.stl'");
@@ -606,11 +795,22 @@ public final class CSG {
         }
     }
 
-
+    /**
+     * Extrudes the specified polygon.
+     * @param dir extrusion direction
+     * @param vertices polygon vertices
+     * @return extruded polygon CSG
+     */
     public static CSG extrude(Vector3d dir, Vector3d... vertices) {
         return extrude(dir, Arrays.asList(vertices));
     }
 
+    /**
+     * Extrudes the specified polygon.
+     * @param dir extrusion direction
+     * @param vertices polygon vertices
+     * @return extruded polygon CSG
+     */
     public static CSG extrude(Vector3d dir, List<Vector3d> vertices) {
 
         CSG result = new CSG(defaultFileType);
@@ -624,7 +824,8 @@ public final class CSG {
         String[] exeArgs = {
                 "--create", "extrusion:polygon",
                 dir.x() + "," + dir.y() + "," + dir.z() + coords,
-                result.getFile().getAbsolutePath()};
+                result.getFile().getAbsolutePath()
+        };
 
         int exitValue = VCSG.execute(
                 exeArgs
@@ -637,6 +838,14 @@ public final class CSG {
         return result;
     }
 
+    /**
+     * Creates a regular prism CSG with the specified origin, number of corners, radius and height.
+     * @param origin origin
+     * @param n number of corners
+     * @param r radius
+     * @param h height
+     * @return prism CSG
+     */
     public static CSG prism(Vector3d origin, int n, double r, double h) {
 
         double anglePerStep = 2*Math.PI / n;
@@ -791,6 +1000,10 @@ class Mesh {
             vertices[indices[vIndexX2]*3+0], vertices[indices[vIndexY2]*3+1], vertices[indices[vIndexZ2]*3+2]
         );
     }
+
+    public int getNumberVertices() {
+        return vertices.length;
+    }
 }
 
 /**
@@ -815,7 +1028,7 @@ class STLLoader {
     }
 
     /**
-     * Deduplicates the soecified triangle vertices.
+     * Deduplicates the specified triangle vertices.
      *
      * @param vertexList vertices to deduplicate
      * @return mesh containing the deduplicated vertices and index list
