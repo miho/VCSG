@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 public final class CSG {
     private File file;
 
-    private static String defaultFileType = ".stp";
+    private static String defaultFileType = ".brep";
     private String fileType = defaultFileType;
     private double fuzzyValue = 0;
 
@@ -65,7 +65,7 @@ public final class CSG {
     CSG(String fileType) {
         try {
             this.setFileType(fileType);
-            file = Files.createTempFile("_vcsg_", "." + getFileType()).toFile();
+            file = Files.createTempFile("_vcsg_",  getFileType()).toFile();
         } catch (IOException e) {
             throw new RuntimeException("cannot create csg object because tmp file cannot be created", e);
         }
@@ -126,34 +126,23 @@ public final class CSG {
      * @param others CSG objects to be removed from this CSG.
      * @return difference between this CSG object and the specified CSG objects
      */
-    public CSG difference(CSG... others) {
+    public CSG difference(List<CSG> others) {
 
-        CSG result = new CSG(fileType);
-        CSG union = new CSG(fileType).union(others);
-
-        String[] exeArgs;
-
-        if (Double.compare(getFuzzyValue(), 0) == 0) {
-            exeArgs = new String[]{"--csg", "difference",
-                    getFile().getAbsolutePath(),
-                    union.getFile().getAbsolutePath(),
-                    result.getFile().getAbsolutePath()};
-        } else {
-            exeArgs = new String[]{"--csg", "difference",
-                    getFile().getAbsolutePath(),
-                    union.getFile().getAbsolutePath(),
-                    result.getFile().getAbsolutePath(),
-                    "0.1",
-                    "" + getFuzzyValue()};
-        }
-
-        int exitValue = VCSG.execute(exeArgs).print(null, System.err).getProcess().exitValue();
-
-        if (exitValue != 0) {
-            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
+        CSG result = this.clone();
+        for (CSG csg : others) {
+            result = result.difference(csg);
         }
 
         return result;
+    }
+
+        /**
+     * Computes the difference between this CSG object and the specified CSG objects.
+     * @param others CSG objects to be removed from this CSG.
+     * @return difference between this CSG object and the specified CSG objects
+     */
+    public CSG difference(CSG... others) {
+        return difference(Arrays.asList(others));
     }
 
     /**
@@ -208,7 +197,7 @@ public final class CSG {
 
         CSG result = this.clone();
         for (CSG csg : others) {
-            result = csg.union(csg);
+            result = result.union(csg);
         }
 
         return result;
@@ -561,6 +550,32 @@ public final class CSG {
     }
 
     /**
+     * Returns a cylinder CSG with the specified origin, stop positon and radius.
+     * @param origin origin of this cylinder
+     * @param stop stop location
+     * @param radius radius of the cylinder
+     * @return cylinder csg
+     */
+    public static CSG cyl(Vector3d origin, Vector3d stop, double radius) {
+        CSG result = new CSG(defaultFileType);
+        double height = stop.distance(origin);
+
+        String coords = 0/*origin.x()*/ + "," + 0/*origin.y()*/ + "," + 0/*origin.z()*/ + "," + radius + "," + height;
+
+        int exitValue = VCSG.execute(
+                "--create", "cyl", coords,
+                result.getFile().getAbsolutePath()
+        ).print(null, System.err).getProcess().exitValue();
+
+        if (exitValue != 0) {
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue);
+        }
+
+        return result.transformed(Transform.unity().rot(Vector3d.z(height), stop.minus(origin)))
+                     .transformed(Transform.unity().translate(origin));
+    }
+
+    /**
      * Returns a (truncated) cone CSG with the specified origin, upper radius, lower radius and height
      * @param origin origin of this cylinder
      * @param r1 upper radius
@@ -592,6 +607,43 @@ public final class CSG {
         }
 
         return result;
+    }
+
+        /**
+     * Returns a (truncated) cone CSG with the specified origin, upper radius, lower radius and height
+     * @param origin origin of this cylinder
+     * @param stop stop location
+     * @param r1 upper radius
+     * @param r2 lower radius
+     * @return cone CSG
+     */
+    public static CSG cone(Vector3d origin, Vector3d stop, double r1, double r2) {
+
+        double height = stop.distance(origin);
+
+        if (Double.compare(r1, r2) == 0) {
+            System.err.println("WARNING: radii of cone are identical. Converting it to a cylinder tp prevent OCC to crash.");
+            return cyl(origin, r1, height);
+        }
+
+        CSG result = new CSG(defaultFileType);
+
+        String coords = 0/*origin.x()*/ + "," + 0/*origin.y()*/ + "," + 0/*origin.z()*/ + "," + r1 + "," + r2 + "," + height;
+
+        String[] exeArgs = {
+                "--create", "cone", coords,
+                result.getFile().getAbsolutePath()};
+
+        int exitValue = VCSG.execute(
+                exeArgs
+        ).print(null, System.err).getProcess().exitValue();
+
+        if (exitValue != 0) {
+            throw new RuntimeException("Error during CSG command, exit value: " + exitValue + ", command: occ-csg " + String.join("",exeArgs));
+        }
+
+        return result.transformed(Transform.unity().rot(Vector3d.z(height), stop.minus(origin)))
+                     .transformed(Transform.unity().translate(origin));
     }
 
     /**

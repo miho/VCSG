@@ -113,7 +113,6 @@ public class VCSGTest {
             double volumeCylinder2 = CSG.cyl(r, h).computeVolume(0.0001);
             assertEquals(Math.PI*r*r*h, volumeCylinder2, 1e-2);
         }
-
     }
 }
 
